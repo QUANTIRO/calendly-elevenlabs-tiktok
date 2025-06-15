@@ -13,16 +13,29 @@ const redactPhoneForConsole = (text) => {
   if (typeof text !== 'string') return text;
   
   return text
-    // UK international format: +447xxxxxxxxx -> +44XXXXXxxxx (show first 3, last 4)
-    .replace(/\+44(7\d)(\d{5})(\d{4})/g, '+44$1XXXXX$3')
-    // UK domestic format: 07xxxxxxxxx -> 07XXXXXxxxx (show first 2, last 4) 
-    .replace(/\b(07)(\d{5})(\d{4})\b/g, '$1XXXXX$3')
-    // US format: +1xxxxxxxxxx -> +1XXXXXXxxxx (show first 2, last 4)
-    .replace(/\+1(\d{3})(\d{4})(\d{4})/g, '+1$1XXXX$3')
-    // Other international: +xxxxxxxxxxxx -> +xxXXXXXXxxxx (show country code + 2, last 4)
-    .replace(/\+(\d{1,3})(\d{2})(\d{4,6})(\d{4})/g, '+$1$2XXXX$4')
+    // Poland international format: +48xxxxxxxxx -> +48XXX-XXX-789 (show last 3)
+    .replace(/(\+48)\s*(\d{3})\s*(\d{3})\s*(\d{3})/g, '$1 XXX-XXX-$4')
+    
+    // Poland domestic format: xxx xxx xxx -> XXX-XXX-789 (show last 3)
+    .replace(/\b(\d{3})\s*(\d{3})\s*(\d{3})\b/g, 'XXX-XXX-$3')
+    
+    // Poland domestic with spaces: xx xxx xx xx -> XX-XXX-XX-89 (show last 2)
+    .replace(/\b(\d{2})\s+(\d{3})\s+(\d{2})\s+(\d{2})\b/g, 'XX-XXX-XX-$4')
+    
+    // UK international format: +447xxxxxxxxx -> +44-7XX-XXXX-1234 (show first 3, last 4)
+    .replace(/(\+44)(7\d)\d{5}(\d{4})/g, '$1-$2X-XXXX-$3')
+    
+    // UK domestic format: 07xxxxxxxxx -> 07XX-XXXX-1234 (show first 3, last 4)
+    .replace(/(07\d)\d{4}(\d{4})/g, '$1X-XXXX-$2')
+    
+    // US format: +1xxxxxxxxxx -> +1-XXX-XXXX-1234 (show country code, last 4)
+    .replace(/(\+1)\d{6}(\d{4})/g, '$1-XXX-XXXX-$2')
+    
+    // Other international: +xxxxxxxxxxx -> +XX-XXXX-XXXX-1234 (show country code + 2, last 4)
+    .replace(/(\+\d{1,3})\d{4,7}(\d{4})/g, '$1-XXXX-XXXX-$2')
+    
     // Generic long numbers that look like phone numbers (10+ digits)
-    .replace(/\b(\d{2})(\d{4,8})(\d{3,4})\b/g, '$1XXXX$3');
+    .replace(/\b\d{2}(\d{4,8})\d{3}\b/g, 'XX-XXXX-XXX');
 };
 
 // Override console.log to redact phone numbers
@@ -38,6 +51,49 @@ console.log = (...args) => {
   });
   originalConsoleLog.apply(console, redactedArgs);
 };
+
+// Przykłady testowe:
+console.log("Numer polski: +48 123 456 789");
+console.log("Numer polski krajowy: 12 345 67 89");
+console.log("Numer polski komórkowy: 501 234 567");
+console.log("Numer UK: +44 7123 456789");
+console.log("Numer US: +1 5551234567");
+console.log("Obiekt z numerami: ", {
+  telefon: "+48 123 456 789",
+  komórka: "501 234 567"
+});
+
+
+// Generic phone number redaction function for console output
+//const redactPhoneForConsole = (text) => {
+  //if (typeof text !== 'string') return text;
+  
+  //return text
+    // UK international format: +447xxxxxxxxx -> +44XXXXXxxxx (show first 3, last 4)
+    ///.replace(/\+44(7\d)(\d{5})(\d{4})/g, '+44$1XXXXX$3')
+    // UK domestic format: 07xxxxxxxxx -> 07XXXXXxxxx (show first 2, last 4) 
+    ///.replace(/\b(07)(\d{5})(\d{4})\b/g, '$1XXXXX$3')
+    // US format: +1xxxxxxxxxx -> +1XXXXXXxxxx (show first 2, last 4)
+    ///.replace(/\+1(\d{3})(\d{4})(\d{4})/g, '+1$1XXXX$3')
+    // Other international: +xxxxxxxxxxxx -> +xxXXXXXXxxxx (show country code + 2, last 4)
+    ///.replace(/\+(\d{1,3})(\d{2})(\d{4,6})(\d{4})/g, '+$1$2XXXX$4')
+    // Generic long numbers that look like phone numbers (10+ digits)
+    //.replace(/\b(\d{2})(\d{4,8})(\d{3,4})\b/g, '$1XXXX$3');
+//};
+
+// Override console.log to redact phone numbers
+///const originalConsoleLog = console.log;
+///console.log = (...args) => {
+  ///const redactedArgs = args.map(arg => {
+    ///if (typeof arg === 'string') {
+      ///return redactPhoneForConsole(arg);
+    ///} else if (typeof arg === 'object' && arg !== null) {
+      ///return JSON.parse(redactPhoneForConsole(JSON.stringify(arg)));
+    ///}
+    ///return arg;
+  ///});
+  ///originalConsoleLog.apply(console, redactedArgs);
+///};
 
 /**
  * Handles Elevenlabs personalization webhook to provide context variables
